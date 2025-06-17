@@ -45,16 +45,16 @@ func CreateRSAKeyPair(keyPairFilePath string) error {
 	skipGeneration := false
 
 	if _, err := os.Stat(privateKeyFile); err == nil {
-		slog.Warn("Private key file already exists, skipping creation", slog.String("file", privateKeyFile))
+		slog.Warn("Private key file already exists, skipping creation.", slog.String("file", privateKeyFile))
 		skipGeneration = true
 	}
 	if _, err := os.Stat(publicKeyFile); err == nil {
-		slog.Warn("Public key file already exists, skipping creation", slog.String("file", publicKeyFile))
+		slog.Warn("Public key file already exists, skipping creation.", slog.String("file", publicKeyFile))
 		skipGeneration = true
 	}
 
 	if skipGeneration {
-		slog.Info("RSA key pair already exists, skipping creation")
+		slog.Info("RSA key pair already exists, skipping creation.")
 		return nil
 	}
 
@@ -101,7 +101,7 @@ func CreateRSAKeyPair(keyPairFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to write public key to file: %w", err)
 	}
-	slog.Info("RSA key pair generated successfully")
+	slog.Info("RSA key pair generated successfully.")
 
 	return nil
 }
