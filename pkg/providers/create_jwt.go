@@ -1,4 +1,3 @@
-// read private key from file
 package providers
 
 //

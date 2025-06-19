@@ -14,7 +14,6 @@ is useful for initializing cryptographic assets or identity provider configurati
 Example usage:
   create rsa-key-pair --target-dir /path/to/directory
   create identity-provider --target-dir /path/to/directory`,
-	DisableFlagParsing: true,
 }
 
 func init() {

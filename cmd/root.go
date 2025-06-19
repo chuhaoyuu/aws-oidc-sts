@@ -7,7 +7,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var TargetDir string
+var (
+	TargetDir string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -35,7 +37,8 @@ func init() {
 		os.Exit(1)
 	}
 
-	rootCmd.Root().CompletionOptions.DisableDefaultCmd = true
+	rootCmd.Root().CompletionOptions.DisableDefaultCmd = false
 	rootCmd.AddCommand(createCmd)
 	rootCmd.PersistentFlags().StringVarP(&TargetDir, "output-dir", "o", pwd, "Target directory for the generated files")
+
 }

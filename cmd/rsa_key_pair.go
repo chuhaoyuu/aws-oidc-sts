@@ -20,5 +20,4 @@ Example usage:
 			cmd.SilenceUsage = true
 		}
 	},
-	DisableFlagParsing: true,
 }
