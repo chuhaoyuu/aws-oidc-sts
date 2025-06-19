@@ -9,5 +9,4 @@ const (
 	JWTSubject        = "aws-oidc-sts"
 	JWKSFileName      = "jwks.json"
 	JWKSUsage         = "sig"
-	AWSRegion         = "ap-northeast-1"
 )

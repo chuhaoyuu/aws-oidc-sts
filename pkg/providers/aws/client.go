@@ -96,7 +96,7 @@ func Create(service AwsService) error {
 	}
 	err := service.Create()
 	if err != nil {
-		return fmt.Errorf("failed to create AWS resource: %v", err)
+		return fmt.Errorf("failed to create AWS resource: %w", err)
 	}
 	return nil
 }

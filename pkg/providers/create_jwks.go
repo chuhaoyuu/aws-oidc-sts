@@ -23,12 +23,12 @@ func CreateIdentityProvider(filePath, bucketName, region string) error {
 		return fmt.Errorf("failed to create JSON Web Key Set: %w", err)
 	}
 
-	singedJWT, err := CreateJWT(jwkKey)
+	signedJWT, err := CreateJWT(jwkKey)
 	if err != nil {
 		return fmt.Errorf("failed to create JWT: %w", err)
 	}
 
-	slog.Info("JWT created successfully", "JWT", string(singedJWT))
+	slog.Info("JWT created successfully", "JWT", string(signedJWT))
 
 	cfg, err := awsProvider.AwsClient(region)
 	if err != nil {
