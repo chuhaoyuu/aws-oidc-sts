@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/chuhaoyuu/aws-oidc-sts/pkg/providers"
 )
 
 // S3Service represents a service for interacting with an S3 bucket.
@@ -33,7 +32,10 @@ func (s *S3Service) Create() error {
 	_, err := s.Client.CreateBucket(context.TODO(), &s3.CreateBucketInput{
 		Bucket: aws.String(s.BucketName),
 		CreateBucketConfiguration: &types.CreateBucketConfiguration{
-			LocationConstraint: providers.AWSRegion,
+			// FIXME: The LocationConstraint is set to "ap-northeast-1" for the Tokyo region.
+			// Change this to the appropriate region if needed.
+			// If you are using a different region, update this value accordingly.
+			LocationConstraint: "ap-northeast-1",
 		},
 	})
 	if err != nil {

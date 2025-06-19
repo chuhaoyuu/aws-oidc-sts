@@ -1,8 +1,15 @@
 package cmd
 
 import (
+	"log/slog"
+
 	"github.com/chuhaoyuu/aws-oidc-sts/pkg/providers"
 	"github.com/spf13/cobra"
+)
+
+var (
+	bucketName string
+	region     string
 )
 
 var identityProviderCmd = &cobra.Command{
@@ -14,11 +21,21 @@ or configuring an identity provider that requires a JWKS for token signing
 and verification.
 
 Example usage:
-  aws-oidc-sts create identity-provider --target-dir /path/to/directory`,
+  aws-oidc-sts create identity-provider --target-dir /path/to/directory --bucket-name my-s3-bucket`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := providers.CreateJSONWebKeySet(TargetDir); err != nil {
-			cmd.PrintErrln("Error creating JSON Web Key Set:", err)
+		if err := providers.CreateIdentityProvider(TargetDir, bucketName, region); err != nil {
+			cmd.PrintErrln("Failed to create identity provider:", err)
+			cmd.SilenceUsage = true
+		} else {
+			slog.Info("Identity provider created successfully.")
 		}
+
 	},
-	DisableFlagParsing: true,
+}
+
+func init() {
+	identityProviderCmd.Flags().StringVarP(&bucketName, "bucket-name", "b", "", "S3 bucket name to store the JWKS and openid-configuration (required)")
+	identityProviderCmd.Flags().StringVarP(&region, "region", "r", "", "AWS region (required)")
+	identityProviderCmd.MarkFlagRequired("bucket-name")
+	identityProviderCmd.MarkFlagRequired("region")
 }

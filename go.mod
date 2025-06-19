@@ -37,7 +37,7 @@ require (
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/lestrrat-go/option/v2 v2.0.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/spf13/cobra v1.9.1 // indirect
+	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
 	golang.org/x/crypto v0.39.0 // indirect

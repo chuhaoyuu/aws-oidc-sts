@@ -6,12 +6,42 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	awsProvider "github.com/chuhaoyuu/aws-oidc-sts/pkg/providers/aws"
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jwk"
 )
+
+func CreateIdentityProvider(filePath, bucketName, region string) error {
+	// Create the JWKS file
+	jwkKey, err := CreateJSONWebKeySet(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create JSON Web Key Set: %w", err)
+	}
+
+	singedJWT, err := CreateJWT(jwkKey)
+	if err != nil {
+		return fmt.Errorf("failed to create JWT: %w", err)
+	}
+
+	slog.Info("JWT created successfully", "JWT", string(singedJWT))
+
+	cfg, err := awsProvider.AwsClient(region)
+	if err != nil {
+		return fmt.Errorf("failed to create AWS client: %w", err)
+	}
+
+	awsProvider.Create(awsProvider.Builder(&awsProvider.S3Service{
+		Client:     s3.NewFromConfig(cfg),
+		BucketName: bucketName,
+	}))
+
+	return nil
+}
 
 // keyIDFromPublicKey generates a unique key identifier (key ID) from the given public key.
 // The publicKey parameter can be of any type that represents a public key.

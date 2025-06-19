@@ -18,10 +18,10 @@ func Builder(serviceType AwsService) AwsService {
 			Client:     service.Client,
 			BucketName: service.BucketName,
 		}
-	case *AWSCloudFront:
-		return &AWSCloudFront{
-			Name: service.Name,
-		}
+	// case *AWSCloudFront:
+	// 	return &AWSCloudFront{
+	// 		Name: service.Name,
+	// 	}
 	default:
 		return nil
 	}

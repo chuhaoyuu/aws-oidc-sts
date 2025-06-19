@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/chuhaoyuu/aws-oidc-sts/pkg/providers"
 )
 
 // TODO:
@@ -35,10 +34,10 @@ type AwsService interface {
 // Returns:
 //   - aws.Config: The AWS SDK configuration object.
 //   - error: An error if the configuration loading or identity retrieval fails.
-func AwsClient() (aws.Config, error) {
+func AwsClient(region string) (aws.Config, error) {
 	ctx := context.TODO()
 	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithRegion(providers.AWSRegion),
+		config.WithRegion(region),
 	)
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("unable to load SDK config: %w", err)
