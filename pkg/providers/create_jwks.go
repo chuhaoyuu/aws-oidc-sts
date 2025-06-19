@@ -35,10 +35,13 @@ func CreateIdentityProvider(filePath, bucketName, region string) error {
 		return fmt.Errorf("failed to create AWS client: %w", err)
 	}
 
-	awsProvider.Create(awsProvider.Builder(&awsProvider.S3Service{
+	if err := awsProvider.Create(awsProvider.Builder(&awsProvider.S3Service{
 		Client:     s3.NewFromConfig(cfg),
 		BucketName: bucketName,
-	}))
+		Region:     region,
+	})); err != nil {
+		return fmt.Errorf("failed to create S3 bucket: %w", err)
+	}
 
 	return nil
 }

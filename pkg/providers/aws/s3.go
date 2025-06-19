@@ -15,6 +15,7 @@ import (
 type S3Service struct {
 	Client     *s3.Client
 	BucketName string
+	Region     string
 }
 
 // Create creates an S3 bucket using the AWS SDK for Go v2.
@@ -32,10 +33,7 @@ func (s *S3Service) Create() error {
 	_, err := s.Client.CreateBucket(context.TODO(), &s3.CreateBucketInput{
 		Bucket: aws.String(s.BucketName),
 		CreateBucketConfiguration: &types.CreateBucketConfiguration{
-			// FIXME: The LocationConstraint is set to "ap-northeast-1" for the Tokyo region.
-			// Change this to the appropriate region if needed.
-			// If you are using a different region, update this value accordingly.
-			LocationConstraint: "ap-northeast-1",
+			LocationConstraint: types.BucketLocationConstraint(s.Region),
 		},
 	})
 	if err != nil {

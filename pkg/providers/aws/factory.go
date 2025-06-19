@@ -17,6 +17,7 @@ func Builder(serviceType AwsService) AwsService {
 		return &S3Service{
 			Client:     service.Client,
 			BucketName: service.BucketName,
+			Region:     service.Region,
 		}
 	// case *AWSCloudFront:
 	// 	return &AWSCloudFront{
