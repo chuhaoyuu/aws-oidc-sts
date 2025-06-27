@@ -11,11 +11,21 @@ import (
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	awsProvider "github.com/chuhaoyuu/aws-oidc-sts/pkg/providers/aws"
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jwk"
 )
 
+// CreateIdentityProvider creates an identity provider by generating a JSON Web Key Set (JWKS), creating a signed JWT, and setting up an S3 bucket.
+// Parameters:
+// - filePath: Path to the private key file used for creating the JWKS.
+// - bucketName: Name of the S3 bucket to be created.
+// - region: AWS region where the S3 bucket will be created.
+// Returns:
+// - error: An error if any step fails during the creation process.
 func CreateIdentityProvider(filePath, bucketName, region string) error {
 	// Create the JWKS file
 	jwkKey, err := CreateJSONWebKeySet(filePath)
@@ -35,29 +45,31 @@ func CreateIdentityProvider(filePath, bucketName, region string) error {
 		return fmt.Errorf("failed to create AWS client: %w", err)
 	}
 
-	identity, err := client.AwsClientIdentity()
+	identity, err := client.AwsClientIdentity(&sts.GetCallerIdentityInput{})
 	if err != nil {
 		return fmt.Errorf("failed to get AWS client identity: %w", err)
 	}
+	slog.Info("AWS Client Identity", "Account", aws.ToString(identity.Account), "Arn", aws.ToString(identity.Arn), "Region", region, "UserId", aws.ToString(identity.UserId))
 
-	slog.Info("AWS Client Identity",
-		"Account", aws.ToString(identity.Account),
-		"Arn", aws.ToString(identity.Arn),
-		"Region", region,
-		"UserId", aws.ToString(identity.UserId),
-	)
-	err = client.CreateS3Bucket(bucketName, region)
+	slog.Info("Creating S3 bucket", "BucketName", bucketName)
+	buckerInfo, err := client.CreateS3Bucket(&s3.CreateBucketInput{Bucket: aws.String(bucketName),
+		CreateBucketConfiguration: &types.CreateBucketConfiguration{
+			LocationConstraint: types.BucketLocationConstraint(region),
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create S3 bucket: %w", err)
 	}
+	slog.Info("S3 Bucket created successfully", "Bucket Location", aws.ToString(buckerInfo.Location))
 
 	return nil
 }
 
 // keyIDFromPublicKey generates a unique key identifier (key ID) from the given public key.
-// The publicKey parameter can be of any type that represents a public key.
-// This function is typically used to create a key ID for use in JSON Web Key Sets (JWKS).
-// The returned key ID is a string that uniquely identifies the provided public key.
+// Parameters:
+// - publicKey: The public key to generate the key ID from.
+// Returns:
+// - string: A unique key ID derived from the public key.
 func keyIDFromPublicKey(publicKey any) string {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
@@ -73,33 +85,12 @@ func keyIDFromPublicKey(publicKey any) string {
 	return keyID
 }
 
-// CreateJSONWebKeySet generates a JSON Web Key Set (JWKS) from a given private key file.
-// It parses the private and public keys from the specified file, creates a JWK for the private key,
-// and adds the corresponding public key to the JWK Set. The resulting JWKS is then written to a file.
-//
+// CreateJSONWebKeySet creates a JSON Web Key Set (JWKS) from the provided private key file.
 // Parameters:
-//   - filePath: The path to the private key file.
-//
+// - filePath: Path to the private key file used for creating the JWKS.
 // Returns:
-//   - jwk.Key: The generated JWK for the private key.
-//   - error: An error if any step in the process fails.
-//
-// The function performs the following steps:
-//  1. Parses the private and public keys from the provided file.
-//  2. Creates a new JWK Set.
-//  3. Extracts the key ID (kid) from the public key.
-//  4. Imports the private key into a JWK and sets its key ID, usage, and algorithm.
-//  5. Extracts the public key from the private key and adds it to the JWK Set.
-//  6. Marshals the JWK Set into JSON format.
-//  7. Writes the JSON-formatted JWK Set to a file in the specified directory.
-//
-// Errors are returned if any of the following occur:
-//   - Parsing the private or public key fails.
-//   - Importing the private key into a JWK fails.
-//   - Setting the key ID, usage, or algorithm for the JWK fails.
-//   - Creating the public key from the private key fails.
-//   - Marshaling the JWK Set into JSON format fails.
-//   - Writing the JWK Set to a file fails.
+// - jwk.Key: The private key imported as a JWK.
+// - error: An error if any step fails during the creation process.
 func CreateJSONWebKeySet(filePath string) (jwk.Key, error) {
 
 	privateKey, err := ParsePrivateKeyFromFile(filePath)
