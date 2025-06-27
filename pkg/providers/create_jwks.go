@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsProvider "github.com/chuhaoyuu/aws-oidc-sts/pkg/providers/aws"
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jwk"
@@ -30,16 +30,24 @@ func CreateIdentityProvider(filePath, bucketName, region string) error {
 
 	slog.Info("JWT created successfully", "JWT", string(signedJWT))
 
-	cfg, err := awsProvider.AwsClient(region)
+	client, err := awsProvider.NewAwsFromConfig(region)
 	if err != nil {
 		return fmt.Errorf("failed to create AWS client: %w", err)
 	}
 
-	if err := awsProvider.Create(awsProvider.Builder(&awsProvider.S3Service{
-		Client:     s3.NewFromConfig(cfg),
-		BucketName: bucketName,
-		Region:     region,
-	})); err != nil {
+	identity, err := client.AwsClientIdentity()
+	if err != nil {
+		return fmt.Errorf("failed to get AWS client identity: %w", err)
+	}
+
+	slog.Info("AWS Client Identity",
+		"Account", aws.ToString(identity.Account),
+		"Arn", aws.ToString(identity.Arn),
+		"Region", region,
+		"UserId", aws.ToString(identity.UserId),
+	)
+	err = client.CreateS3Bucket(bucketName, region)
+	if err != nil {
 		return fmt.Errorf("failed to create S3 bucket: %w", err)
 	}
 

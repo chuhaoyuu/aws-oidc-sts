@@ -7,6 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
@@ -17,14 +19,50 @@ import (
 // 4. Create IAM role with trust policy to allow sts:AssumeRole with OIDC provider
 // 5. Create IAM policy to allow sts:AssumeRole with OIDC provider
 
-// AwsService defines an interface for interacting with AWS services.
-// It provides a method to create resources or perform operations
-// that may result in an error.
-type AwsService interface {
-	Create() error
+type AwsClient interface {
+	// STS
+	AwsClientIdentity() (*sts.GetCallerIdentityOutput, error)
+
+	// s3
+	CreateS3Bucket(bucketName, region string) error
 }
 
-// AwsClient initializes and returns an AWS SDK configuration object.
+type AwsServiceClient struct {
+	stsClient *sts.Client
+	s3Client  *s3.Client
+}
+
+func (c *AwsServiceClient) AwsClientIdentity() (*sts.GetCallerIdentityOutput, error) {
+
+	// Use the AWS SDK to get the identity
+	identity, err := c.stsClient.GetCallerIdentity(context.TODO(), &sts.GetCallerIdentityInput{})
+	if err != nil {
+		return &sts.GetCallerIdentityOutput{}, fmt.Errorf("failed to get caller identity: %w", err)
+	}
+
+	return identity, nil
+
+}
+
+func (c *AwsServiceClient) CreateS3Bucket(bucketName, region string) error {
+	// Create the bucket
+	slog.Info("Creating S3 bucket", "BucketName", bucketName)
+	_, err := c.s3Client.CreateBucket(context.TODO(), &s3.CreateBucketInput{
+		Bucket: aws.String(bucketName),
+		CreateBucketConfiguration: &types.CreateBucketConfiguration{
+			LocationConstraint: types.BucketLocationConstraint(region),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create bucket %s: %w", bucketName, err)
+	}
+
+	slog.Info("S3 Bucket created successfully", "BucketName", bucketName)
+
+	return nil
+}
+
+// newClient initializes and returns an AWS SDK configuration object.
 // It loads the default configuration with the specified AWS region and
 // retrieves the AWS client identity for logging purposes.
 //
@@ -34,7 +72,7 @@ type AwsService interface {
 // Returns:
 //   - aws.Config: The AWS SDK configuration object.
 //   - error: An error if the configuration loading or identity retrieval fails.
-func AwsClient(region string) (aws.Config, error) {
+func newClient(region string) (aws.Config, error) {
 	ctx := context.TODO()
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(region),
@@ -43,60 +81,30 @@ func AwsClient(region string) (aws.Config, error) {
 		return aws.Config{}, fmt.Errorf("unable to load SDK config: %w", err)
 	}
 
-	identity, err := clientIdentity(cfg)
-	if err != nil {
-		return aws.Config{}, fmt.Errorf("failed to get AWS client identity: %w", err)
-	}
-
-	slog.Info("AWS Client Identity",
-		"Account", aws.ToString(identity.Account),
-		"Arn", aws.ToString(identity.Arn),
-		"Region", cfg.Region,
-		"UserId", aws.ToString(identity.UserId),
-	)
-
 	return cfg, nil
-}
-
-// clientIdentity retrieves the AWS caller identity using the provided AWS configuration.
-// It utilizes the AWS SDK's STS (Security Token Service) client to fetch the caller identity.
-//
-// Parameters:
-//   - cfg: An aws.Config object containing the AWS configuration.
-//
-// Returns:
-//   - *sts.GetCallerIdentityOutput: The output containing the caller identity details.
-//   - error: An error if the operation fails, otherwise nil.
-func clientIdentity(cfg aws.Config) (*sts.GetCallerIdentityOutput, error) {
-
-	// Use the AWS SDK to get the identity
-	client := sts.NewFromConfig(cfg)
-	identity, err := client.GetCallerIdentity(context.TODO(), &sts.GetCallerIdentityInput{})
-	if err != nil {
-		return &sts.GetCallerIdentityOutput{}, fmt.Errorf("failed to get caller identity: %w", err)
-	}
-
-	return identity, nil
 
 }
 
-// Create initializes and creates an AWS resource using the provided AwsService.
-// It returns an error if the service is nil or if the creation process fails.
+// NewAwsFromConfig creates a new AWS service client configured for the specified region.
+// It initializes the AWS client using the provided region and returns an instance of AwsServiceClient.
+// If there is an error during the client creation, it returns an error.
 //
 // Parameters:
-//   - service: An implementation of the AwsService interface that defines the
-//     resource creation logic.
+//   - region: The AWS region to configure the client for.
 //
 // Returns:
-//   - error: An error indicating why the creation failed, or nil if the operation
-//     was successful.
-func Create(service AwsService) error {
-	if service == nil {
-		return fmt.Errorf("resource is nil")
-	}
-	err := service.Create()
+//   - Client: An interface representing the AWS service client.
+//   - error: An error if the client creation fails.
+func NewAwsFromConfig(region string) (AwsClient, error) {
+
+	config, err := newClient(region)
 	if err != nil {
-		return fmt.Errorf("failed to create AWS resource: %w", err)
+		return &AwsServiceClient{}, fmt.Errorf("failed to create AWS client: %w", err)
 	}
-	return nil
+
+	return &AwsServiceClient{
+		stsClient: sts.NewFromConfig(config),
+		s3Client:  s3.NewFromConfig(config),
+	}, nil
+
 }
