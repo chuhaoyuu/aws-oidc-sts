@@ -11,8 +11,8 @@ var (
 	TargetDir string
 )
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+// RootCmd represents the base command when called without any subcommands
+var RootCmd = &cobra.Command{
 	Use:   "aws-oidc-sts",
 	Short: "A CLI tool for managing OIDC and STS resources in AWS",
 	Long: `aws-oidc-sts is a command-line tool designed to simplify the management 
@@ -24,7 +24,7 @@ and manage related resources.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
+	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -37,8 +37,7 @@ func init() {
 		os.Exit(1)
 	}
 
-	rootCmd.Root().CompletionOptions.DisableDefaultCmd = false
-	rootCmd.AddCommand(createCmd)
-	rootCmd.PersistentFlags().StringVarP(&TargetDir, "output-dir", "o", pwd, "Target directory for the generated files")
+	RootCmd.Root().CompletionOptions.DisableDefaultCmd = true
+	RootCmd.PersistentFlags().StringVarP(&TargetDir, "output-dir", "o", pwd, "Target directory for the generated files")
 
 }

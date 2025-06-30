@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	rootCmd "github.com/chuhaoyuu/aws-oidc-sts/cmd"
 	"github.com/chuhaoyuu/aws-oidc-sts/pkg/providers"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,7 @@ key pairs for cryptographic operations.
 Example usage:
   aws-oidc-sts create rsa-key-pair --target-dir /path/to/directory`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := providers.CreateRSAKeyPair(TargetDir); err != nil {
+		if err := providers.CreateRSAKeyPair(rootCmd.TargetDir); err != nil {
 			cmd.PrintErrln("Failed to create RSA key pair:", err)
 			cmd.SilenceUsage = true
 		}

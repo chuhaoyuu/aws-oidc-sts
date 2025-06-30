@@ -3,6 +3,7 @@ package cmd
 import (
 	"log/slog"
 
+	rootCmd "github.com/chuhaoyuu/aws-oidc-sts/cmd"
 	"github.com/chuhaoyuu/aws-oidc-sts/pkg/providers"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,7 @@ and verification.
 Example usage:
   aws-oidc-sts create identity-provider --target-dir /path/to/directory --bucket-name my-s3-bucket`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := providers.CreateIdentityProvider(TargetDir, bucketName, region); err != nil {
+		if err := providers.CreateIdentityProvider(rootCmd.TargetDir, bucketName, region); err != nil {
 			cmd.PrintErrln("Failed to create identity provider:", err)
 			cmd.SilenceUsage = true
 		} else {
